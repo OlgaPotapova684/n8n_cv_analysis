@@ -1,0 +1,410 @@
+{
+  "name": "резюме",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "59d0d992-9a01-4190-bc5d-9b3fa75c1b84",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/<GDRIVE_ID>/edit?gid=403664987#gid=403664987",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 403664987,
+          "mode": "list",
+          "cachedResultName": "резюме",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/GDRIVE_ID/edit#gid=403664987"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "de4a519b-07c0-4918-b9a5-649344c53ffe",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "<CREDENTIALS>",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://r.jina.ai/ {{ $json['ссылка'] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "168d266d-61ff-45b3-8fe1-4a6941699f30",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.data }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "имя",
+              "description": "имя кандидата из резюме"
+            },
+            {
+              "name": "образование",
+              "description": "образование кандидата"
+            },
+            {
+              "name": "опыт работы",
+              "description": "опыт работы кандидата"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "a4f7fb43-292d-4e5c-8448-6ff798da2239",
+      "name": "Information Extractor"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        208
+      ],
+      "id": "6666f9b5-846d-4315-9abc-c3c0004e3534",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "<CREDENTIALS>",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=вакансия: менеджер по продажам\nтребования к кандидату:\nопыт активных продаж от 1 года\nнавыки ведения переговоров и работы с возражениями\nопыт работы с CRM-системами (Битрикс 24, AmoCRM и др.)\nувере��ный пользователь MS Office\nразвитые коммуникативные навыки\nнацеленность на результат, способность закрывать сделки\nграмотная устная и письменная речь\n\nниже приведена структурированная информация о кандидате:\nИмя: {{ $json.output['имя'] }}\nОбразование: {{ $json.output['образование'] }}\nОпыт работы:\n{{ $json.output['опыт работы'] }}\n\nпроанализируй, насколько по 10-бальной шкале кандидат соответствует этой вакансии\nВерни **строго валидный JSON** (без markdown, без кавычек, не как строку), строго в этом виде:\n{\n“score”: 0-10,\n“comment”: “Краткий комментарий по соответствию: какие пункты из требований соблюдены, каких не хватает.”,\n“invite”: “ДА” или ”НЕТ”// Если score >5- верни  “ДА”, иначе “НЕТ\n}”\n\nВажно! Верни **строго валидный JSON** (без markdown, без кавычек, не как строку)\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        976,
+        0
+      ],
+      "id": "da5444a2-3116-45bb-b17e-18bbb9e2773a",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        848,
+        208
+      ],
+      "id": "cd42bdac-1bba-449f-afa0-ba3b0d6e50c8",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "<CREDENTIALS>",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.output }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "score",
+              "description": "0-10"
+            },
+            {
+              "name": "отправить приглашение",
+              "description": "ДА или НЕТ"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        1328,
+        0
+      ],
+      "id": "d4a26b87-947c-440a-aefe-8a326fc7af43",
+      "name": "Information Extractor1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1264,
+        208
+      ],
+      "id": "cb87b701-b61d-4752-9b47-39781b335b96",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "<CREDENTIALS>",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f28e1d8b-1eb5-41f3-8eb6-623c58f43077",
+              "leftValue": "={{ $json.output['отправить приглашение'] }}",
+              "rightValue": "ДА",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        112,
+        320
+      ],
+      "id": "8a00530d-2a8c-4550-818c-8fcf54910376",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Ты - вежливый и дружелюбный помощник, который помогает составить  персональное сообщение для кандидата основываясь на информации о нем. Вот данные кандидата ( json ), на основе этой информации напиши приветственное сообщение в котором: 1. обратись к кандидату по имени 2. Отметь что то положительное из его опыта или образования 3. Пригласи его пообщаться в телеграм  4. укажи ссылку на бота.\nФормат: дружелюбный, профессиональный, коротко и по делу. сообщение должно быть в 3-5 предложениях. Не пиши в сообщении “Спасибо за интерес, проявленный к нашей вакансии”\n\nИмя: {{ $('Information Extractor').item.json.output['имя'] }}\n\nScore:  {{ $json.output.score }}\n\nОтправить приглашение: {{ $json.output['отправить приглашение'] }}\n\nРаспарсенный ответ агента:{{ $('AI Agent').item.json.output }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        336
+      ],
+      "id": "3c19448e-0082-421c-99a3-181cd1c9c6e4",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        384,
+        464
+      ],
+      "id": "636d68a5-5707-484b-89f0-60b86380f801",
+      "name": "OpenAI Chat Model3",
+      "credentials": {
+        "openAiApi": {
+          "id": "<CREDENTIALS>",
+          "name": "OpenAi account 2"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {},
+  "triggerCount": 0,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}
